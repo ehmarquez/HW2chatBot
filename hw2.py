@@ -176,6 +176,8 @@ def matchBuild(match, gameTag):
 
     fileobj = open('build.txt','w')
     
+
+
     for i in events:
 
         if "PlayerIndex" and "HumanPlayerId" in i:
@@ -189,13 +191,17 @@ def matchBuild(match, gameTag):
             squadID = i["SquadId"]
             timeint = i['TimeSinceStartMilliseconds'] / 1000
             mTime = time.strftime("%M:%S", time.gmtime(timeint))
-            
+
+            # Player 1 #
+            # -------------------------- #
+            # Player 2 #
+
             if playerName == gameTag:
                 for k, v in unitConv.items():
                     if squadID == k:
                         squadID = v             
                 fileobj.write('{} trained {} ({})\n'.format(playerName, squadID, mTime))
-            #   print('{} trained {} ({})'.format(playerName, squadID, mTime))
+                print('{} trained {} ({})'.format(playerName, squadID, mTime))
 
                 
                 
@@ -246,8 +252,8 @@ def matchRates(match):
     list2 = []
     
     # initialize lists for plotting    
-    S1, tS1, P1, tP1, Exp1, timeX = ([] for i in range (6))
-    S2, tS2, P2, tP2, Exp2 = ([] for i in range (5))
+    S1, tS1, P1, tP1, Exp1, pop1, popcap1 ,timeX = ([] for i in range (8))
+    S2, tS2, P2, tP2, Exp2, pop2, popcap2 = ([] for i in range (7))
     Y1, Y2, dy, dx = ([] for i in range(4))
     tech1, tech2 = ([] for i in range (2))
 
@@ -284,6 +290,8 @@ def matchRates(match):
             tP1.append(a['TotalEnergy'])
             Exp1.append(a['CommandXP'])
             tech1.append(a['TechLevel'])
+            #pop1.append(a['Population'])
+            #popcap1.append(a['PopulationCap'])
 
             # Player 1 #
             # -------------------------- #
@@ -295,6 +303,8 @@ def matchRates(match):
             tP2.append(b['TotalEnergy'])
             Exp2.append(b['CommandXP'])
             tech2.append(b['TechLevel'])
+            #pop2.append(b['Population'])
+            #popcap2.append(b['PopulationCap'])
 
             xTime = (i['TimeSinceStartMilliseconds']/1000)
             timeX.append(xTime) # Time Array
@@ -315,51 +325,25 @@ def matchRates(match):
     # dy/dx of supply/power
     d1s, d2s, d1p, d2p = ([] for i in range (4))
     
-
     for z in timeX: # Rates of rates
-        ds1 = diff(tS1)
-        ds2 = diff(tS2)
-        dp1 = diff(tP1)
-        dp2 = diff(tP2)
-
+        
         dx = diff(timeX)
-   
-        d1s = ds1/dx
-        d2s = ds2/dx
-        d1p = dp1/dx
-        d2p = dp2/dx
+        d1s = diff(tS1)/dx
+        d2s = diff(tS2)/dx
+        d1p = diff(tP1)/dx
+        d2p = diff(tP2)/dx
 
     plt.style.use('ggplot')
 
-
     # Plot 1 (current supply)
-    plt.subplot(221)
+    
     Player1 = specID[playerID1]['Gamertag']
     Player2 = specID[playerID2]['Gamertag']
 
-    plt.plot(timeX, S1, label=Player1)
-    plt.plot(timeX, S2, label=Player2)
-    plt.ylabel('Total Supply')
-    plt.legend()
-
-    # Plot 2 (current power)
-    # included tech level increase vlines
-    plt.subplot(222)
-    plt.plot(timeX, P1)
-    plt.plot(timeX, P2)
-    
-    for i in T1:
-        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player1))
-
-    for i in T2:
-        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player2))
-
-    plt.ylabel('Total Power')
-  
     del timeX[0]
 
     # supply income rate (supply/s)
-    plt.subplot(223)
+    plt.subplot(121)
     plt.plot(timeX, d1s, label=Player1)
     plt.plot(timeX, d2s, label=Player2)
     plt.ylabel('Supply Income Rate')
@@ -367,146 +351,36 @@ def matchRates(match):
    
     #power income rate (power/s)
     #included markers for adv. generator intervals (every 6power/s/s)
-    plt.subplot(224)
-    plt.plot(timeX, d1p, label=Player1)
-    plt.plot(timeX, d2p, label=Player2)
+
+    plt.subplot(122)
+    from collections import OrderedDict    
+    
+    plt.plot(timeX, d1p)
+    plt.plot(timeX, d2p)
     plt.ylabel('Power Income Rate')
 
+    for i in T1:
+        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player1), c='r')
+    for i in T2:
+        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player2), c='b')
+
+
     hline = int(plt.ylim()[1]/6)
-    
+
     for j in range(hline):
-        plt.axhline(6*(j+1), linestyle='dotted')
-    
+        plt.axhline(6*(j+1), linestyle='dotted', c='black', label='Adv. Generator Count')
+
     plt.xlabel('Time (s)')
-    #plt.legend()
-    plt.gcf().set_size_inches(13.5,7.8)
+    
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+    plt.gcf().set_size_inches(14,5)
     plt.subplots_adjust(bottom=0.1, top=0.95, right=0.97, left=0.07)
     pylab.savefig('rates.png')
     plt.gcf().clear()
 
-def test(match):
-
-    from numpy import diff
-
-    try:
-        conn = http.client.HTTPSConnection('www.haloapi.com')
-        conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
-        response = conn.getresponse()
-        data = response.read()
-        #print(data)
-        conn.close()
-    except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
-
-    jsondata = json.loads(data)
-    jsonkeys = jsondata.keys()
-    jsonvalues = jsondata.values()
-    jsonitems = jsondata.items()
-
-    # jsondata['GameEvents']
-
-    events = (jsondata["GameEvents"])
-
-    # events = matchevent API data
-    # i = sets of events
-
-    print (len(events))
-
-    list1 = []
-    list2 = []
-    
-    S1, tS1, P1, tP1, Exp1, timeX, tech1= ([] for i in range (7))
-    S2, tS2, P2, tP2, Exp2, tech2 = ([] for i in range (6))
-    Y1, Y2, dy, dx = ([] for i in range(4))
-
-
-    for i in events:
-
-        if "PlayerIndex" and "HumanPlayerId" in i:
-            list1.append(str(i["PlayerIndex"]))
-            list2.append(i["HumanPlayerId"])    
-            specID = dict(zip(list1,list2)) 
-
-        if "PlayerResources" in i:
-            resources = i["PlayerResources"]
-            playerID1 = '1'
-            playerID2 = '2'
-            a = resources[playerID1]
-            b = resources[playerID2]
-
-            selectType = {
-                1: 'TotalSupply',
-                2: 'TotalEnergy',
-                3: 'CommandXP'    
-            }
-
-            sel = 3
-
-            Y1.append(a[selectType[sel]])
-            Y2.append(b[selectType[sel]])
-
-            S1.append(a['Supply'])
-            tS1.append(a['TotalSupply'])
-            P1.append(a['Energy'])
-            tP1.append(a['TotalEnergy'])
-            Exp1.append(a['CommandXP'])
-            tech1.append(a['TechLevel'])
-
-            # Player 1 #
-            # -------------------------- #
-            # Player 2 #
-
-            S2.append(b['Supply'])
-            tS2.append(b['TotalSupply'])
-            P2.append(b['Energy'])
-            tP2.append(b['TotalEnergy'])
-            Exp2.append(b['CommandXP'])
-            tech2.append(b['TechLevel'])
-
-            xTime = (i['TimeSinceStartMilliseconds']/1000)
-            timeX.append(xTime)
-
-    import matplotlib.pyplot as plt
-    import pylab
-    import numpy as np
-
-    v = np.array(tech1)
-    V = np.where(v[:-1] != v[1:])[0]
-
-    print (V)
-
-    ds1, ds2, dp1, dp2 = ([] for i in range(4))
-    d1s, d2s, d1p, d2p = ([] for i in range (4))
-    
-    plt.style.use('ggplot')
-    plt.subplot(221)
-
-    Player1 = specID[playerID1]['Gamertag']
-    Player2 = specID[playerID2]['Gamertag']
-
-    plt.plot(timeX, tech1, label=Player1)
-    plt.plot(timeX, tech2, label=Player2)
-    plt.ylabel('Tech Level')
-    plt.legend()
-
-    '''
-    plt.subplot(222)
-    plt.plot(timeX, P1)
-    plt.plot(timeX, P2)
-    plt.axhline(1500, linestyle='dotted')
-    plt.axhline(1000, linestyle='dotted')
-    plt.ylabel('Total Power')
-    plt.xlabel('Time (s)')
-    '''
-
-    print(tech1)
-
-    plt.gcf().set_size_inches(13.5,7.8)
-    plt.subplots_adjust(bottom=0.1, top=0.95, right=0.97, left=0.07)
-    pylab.savefig('test.png')
-    plt.gcf().clear()
-
-#matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
+matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
 #matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess')
         
 
