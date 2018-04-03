@@ -8,6 +8,7 @@ headers = keys.hw2key()
 params = urllib.parse.urlencode({
 })
 
+# matchEvents is inferior function
 def matchEvents(match):
 
     try:
@@ -25,8 +26,6 @@ def matchEvents(match):
     jsonvalues = jsondata.values()
     jsonitems = jsondata.items()
 
-    # jsondata['GameEvents']
-
     events = (jsondata["GameEvents"])
 
     # events = matchevent API data
@@ -37,6 +36,7 @@ def matchEvents(match):
     list1 = []
     list2 = []
     
+    # initialize lists for plotting    
     S1, tS1, P1, tP1, Exp1, timeX = ([] for i in range (6))
     S2, tS2, P2, tP2, Exp2 = ([] for i in range (5))
     Y1, Y2 = ([] for i in range(2))
@@ -44,11 +44,13 @@ def matchEvents(match):
 
     for i in events:
 
+        # map playerID to Gamertag
         if "PlayerIndex" and "HumanPlayerId" in i:
             list1.append(str(i["PlayerIndex"]))
             list2.append(i["HumanPlayerId"])    
             specID = dict(zip(list1,list2)) 
             
+        # parse "PlayerResources" data from HW2 API    
         if "PlayerResources" in i:
             resources = i["PlayerResources"]
             playerID1 = '1'
@@ -79,7 +81,6 @@ def matchEvents(match):
             tP2.append(b['TotalEnergy'])
             Exp2.append(b['CommandXP'])
 
-
             xTime = (i['TimeSinceStartMilliseconds']/1000)
             timeX.append(xTime)
 
@@ -88,15 +89,19 @@ def matchEvents(match):
 
     plt.subplot(311)
 
+    # Player names as string
     Player1 = specID[playerID1]['Gamertag']
     Player2 = specID[playerID2]['Gamertag']
 
+    # Total Supple Graph
     plt.plot(timeX, tS1, label=Player1)
     plt.plot(timeX, tS2, label=Player2)
     plt.ylabel('Total Supply')
     plt.xlabel('Time (s)')
     plt.legend()
 
+
+    # Total Power Graph
     plt.subplot(312)
     plt.plot(timeX, tP1)
     plt.plot(timeX, tP2)
@@ -104,6 +109,7 @@ def matchEvents(match):
     plt.ylabel('Total Power')
     plt.xlabel('Time (s)')
 
+    # Leader Point Graph
     plt.subplot(313)
     plt.plot(timeX, Exp1)
     plt.plot(timeX, Exp2)
@@ -113,10 +119,6 @@ def matchEvents(match):
     pylab.savefig('stats.png')
 
     plt.gcf().clear()
-
-
-            #supply = resources['Supply']
-            #print (supply)
 
 def matchBuild(match, gameTag):
     
@@ -233,8 +235,6 @@ def matchRates(match):
     jsonvalues = jsondata.values()
     jsonitems = jsondata.items()
 
-    # jsondata['GameEvents']
-
     events = (jsondata["GameEvents"])
 
     # events = matchevent API data
@@ -245,19 +245,21 @@ def matchRates(match):
     list1 = []
     list2 = []
     
+    # initialize lists for plotting    
     S1, tS1, P1, tP1, Exp1, timeX = ([] for i in range (6))
     S2, tS2, P2, tP2, Exp2 = ([] for i in range (5))
     Y1, Y2, dy, dx = ([] for i in range(4))
     tech1, tech2 = ([] for i in range (2))
 
-
     for i in events:
 
+        # map playerID to Gamertag
         if "PlayerIndex" and "HumanPlayerId" in i:
             list1.append(str(i["PlayerIndex"]))
             list2.append(i["HumanPlayerId"])    
             specID = dict(zip(list1,list2)) 
 
+        # parse "PlayerResources" data from HW2 API    
         if "PlayerResources" in i:
             resources = i["PlayerResources"]
             playerID1 = '1'
@@ -301,13 +303,16 @@ def matchRates(match):
     import pylab
     import numpy as np
 
+    # search for Tech level changes 
     v1 = np.array(tech1)
     T1 = np.where(v1[:-1] != v1[1:])[0]
-
     v2 = np.array(tech2)
     T2 = np.where(v2[:-1] != v2[1:])[0]
 
+    
     ds2, ds2, dp1, dp2 = ([] for i in range(4))
+    
+    # dy/dx of supply/power
     d1s, d2s, d1p, d2p = ([] for i in range (4))
     
 
@@ -326,8 +331,9 @@ def matchRates(match):
 
     plt.style.use('ggplot')
 
-    plt.subplot(221)
 
+    # Plot 1 (current supply)
+    plt.subplot(221)
     Player1 = specID[playerID1]['Gamertag']
     Player2 = specID[playerID2]['Gamertag']
 
@@ -336,6 +342,8 @@ def matchRates(match):
     plt.ylabel('Total Supply')
     plt.legend()
 
+    # Plot 2 (current power)
+    # included tech level increase vlines
     plt.subplot(222)
     plt.plot(timeX, P1)
     plt.plot(timeX, P2)
@@ -350,14 +358,15 @@ def matchRates(match):
   
     del timeX[0]
 
+    # supply income rate (supply/s)
     plt.subplot(223)
     plt.plot(timeX, d1s, label=Player1)
     plt.plot(timeX, d2s, label=Player2)
     plt.ylabel('Supply Income Rate')
     plt.xlabel('Time (s)')
    
-    #plt.legend()
-
+    #power income rate (power/s)
+    #included markers for adv. generator intervals (every 6power/s/s)
     plt.subplot(224)
     plt.plot(timeX, d1p, label=Player1)
     plt.plot(timeX, d2p, label=Player2)
@@ -497,8 +506,7 @@ def test(match):
     pylab.savefig('test.png')
     plt.gcf().clear()
 
-matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')
-            
+#matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
 #matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess')
         
 
