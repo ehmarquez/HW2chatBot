@@ -380,7 +380,78 @@ def matchRates(match):
     pylab.savefig('rates.png')
     plt.gcf().clear()
 
-matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
+def death(match):
+    
+    def coords(ddict):
+        x,y,z = ([] for i in range(3))
+        for i in range(len(ddict)):
+            x.append(ddict[i]['x'])
+            y.append(ddict[i]['y'])
+            z.append(ddict[i]['z'])
+
+        return x,y,z
+
+
+    try:
+        conn = http.client.HTTPSConnection('www.haloapi.com')
+        conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+        #print(data)
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+
+    jsondata = json.loads(data)
+    jsonkeys = jsondata.keys()
+    jsonvalues = jsondata.values()
+    jsonitems = jsondata.items()
+
+    events = (jsondata["GameEvents"])
+
+
+    list1, list2, death1, death2 = ([] for i in range(4))
+    
+
+    for i in events:
+    
+        if "PlayerIndex" and "HumanPlayerId" in i:
+            list1.append(str(i["PlayerIndex"]))
+            list2.append(i["HumanPlayerId"])    
+            specID = dict(zip(list1,list2)) 
+    
+        if i['EventName'] == 'Death':
+
+            a = i['VictimLocation']
+            b = str(i['VictimPlayerIndex'])
+            player = specID[b]
+            
+            if b == '1':
+                death1.append(a)
+            else:
+                death2.append(a)
+
+    x1, y1, z1 = coords(death1)
+    x2, y2, z2 = coords(death2)
+
+
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    #ax.plot_trisurf(x1, y1, z1, cmap=plt.cm.viridis, linewidth=0.2)
+    
+
+    ax.scatter(x1, y1, z1, c='r')
+
+    plt.show()
+
+
+
+death('a747b8ee-e081-4288-8cdb-73d17233c5bd')     
+#matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
 #matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess')
         
 
