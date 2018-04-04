@@ -2,123 +2,18 @@ import json
 import http.client, urllib.request, urllib.parse, urllib.error, base64
 import time
 import keys
+from numpy import around
+from numpy import diff
+
 
 headers = keys.hw2key()
 
 params = urllib.parse.urlencode({
 })
 
-# matchEvents is inferior function
-def matchEvents(match):
-
-    try:
-        conn = http.client.HTTPSConnection('www.haloapi.com')
-        conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
-        response = conn.getresponse()
-        data = response.read()
-        #print(data)
-        conn.close()
-    except Exception as e:
-        print("[Errno {0}] {1}".format(e.errno, e.strerror))
-
-    jsondata = json.loads(data)
-    jsonkeys = jsondata.keys()
-    jsonvalues = jsondata.values()
-    jsonitems = jsondata.items()
-
-    events = (jsondata["GameEvents"])
-
-    # events = matchevent API data
-    # i = sets of events
-
-    print (len(events))
-
-    list1 = []
-    list2 = []
-    
-    # initialize lists for plotting    
-    S1, tS1, P1, tP1, Exp1, timeX = ([] for i in range (6))
-    S2, tS2, P2, tP2, Exp2 = ([] for i in range (5))
-    Y1, Y2 = ([] for i in range(2))
-
-
-    for i in events:
-
-        # map playerID to Gamertag
-        if "PlayerIndex" and "HumanPlayerId" in i:
-            list1.append(str(i["PlayerIndex"]))
-            list2.append(i["HumanPlayerId"])    
-            specID = dict(zip(list1,list2)) 
-            
-        # parse "PlayerResources" data from HW2 API    
-        if "PlayerResources" in i:
-            resources = i["PlayerResources"]
-            playerID1 = '1'
-            playerID2 = '2'
-            a = resources[playerID1]
-            b = resources[playerID2]
-
-            selectType = {
-                1: 'TotalSupply',
-                2: 'TotalEnergy',
-                3: 'CommandXP'    
-            }
-
-            sel = 3
-
-            Y1.append(a[selectType[sel]])
-            Y2.append(b[selectType[sel]])
-
-            S1.append(a['Supply'])
-            tS1.append(a['TotalSupply'])
-            P1.append(a['Energy'])
-            tP1.append(a['TotalEnergy'])
-            Exp1.append(a['CommandXP'])
-
-            S2.append(b['Supply'])
-            tS2.append(b['TotalSupply'])
-            P2.append(b['Energy'])
-            tP2.append(b['TotalEnergy'])
-            Exp2.append(b['CommandXP'])
-
-            xTime = (i['TimeSinceStartMilliseconds']/1000)
-            timeX.append(xTime)
-
-    import matplotlib.pyplot as plt
-    import pylab
-
-    plt.subplot(311)
-
-    # Player names as string
-    Player1 = specID[playerID1]['Gamertag']
-    Player2 = specID[playerID2]['Gamertag']
-
-    # Total Supple Graph
-    plt.plot(timeX, tS1, label=Player1)
-    plt.plot(timeX, tS2, label=Player2)
-    plt.ylabel('Total Supply')
-    plt.xlabel('Time (s)')
-    plt.legend()
-
-
-    # Total Power Graph
-    plt.subplot(312)
-    plt.plot(timeX, tP1)
-    plt.plot(timeX, tP2)
-    
-    plt.ylabel('Total Power')
-    plt.xlabel('Time (s)')
-
-    # Leader Point Graph
-    plt.subplot(313)
-    plt.plot(timeX, Exp1)
-    plt.plot(timeX, Exp2)
-    plt.ylabel('Leader Point XP')
-    plt.xlabel('Time (s)')
-
-    pylab.savefig('stats.png')
-
-    plt.gcf().clear()
+def rnd(arr):
+    for i in arr:
+        i = around(i)
 
 def matchBuild(match, gameTag):
     
@@ -222,10 +117,7 @@ def matchBuild(match, gameTag):
 
     return False
 
-def matchRates(match):
-
-    from numpy import diff
-
+def matchRates(match): 
     try:
         conn = http.client.HTTPSConnection('www.haloapi.com')
         conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
@@ -257,6 +149,8 @@ def matchRates(match):
     Y1, Y2, dy, dx = ([] for i in range(4))
     tech1, tech2 = ([] for i in range (2))
 
+    counter = 0
+
     for i in events:
 
         # map playerID to Gamertag
@@ -267,6 +161,9 @@ def matchRates(match):
 
         # parse "PlayerResources" data from HW2 API    
         if "PlayerResources" in i:
+
+            counter = counter + 1
+
             resources = i["PlayerResources"]
             playerID1 = '1'
             playerID2 = '2'
@@ -309,6 +206,7 @@ def matchRates(match):
             xTime = (i['TimeSinceStartMilliseconds']/1000)
             timeX.append(xTime) # Time Array
 
+    print ('Resource heartbeat count: {}'.format(counter))
     import matplotlib.pyplot as plt
     import pylab
     import numpy as np
@@ -333,6 +231,22 @@ def matchRates(match):
         d1p = diff(tP1)/dx
         d2p = diff(tP2)/dx
 
+    def round_down(num, divisor):
+        return num - (num%divisor)
+    
+    def rarray(arr):
+        temp = []
+        for i in arr:
+            temp.append(round_down(i,0.01))
+        return temp    
+
+    d1s = d1s.tolist()
+ 
+    d1s = rarray(d1s)
+    d2s = rarray(d2s)
+    d1p = rarray(d1p)
+    d2p = rarray(d2p)
+
     plt.style.use('ggplot')
 
     # Plot 1 (current supply)
@@ -346,7 +260,7 @@ def matchRates(match):
     plt.subplot(121)
     plt.plot(timeX, d1s, label=Player1)
     plt.plot(timeX, d2s, label=Player2)
-    plt.ylabel('Supply Income Rate')
+    plt.ylabel('Supply Income Rate (supply/s)')
     plt.xlabel('Time (s)')
    
     #power income rate (power/s)
@@ -354,25 +268,25 @@ def matchRates(match):
 
     plt.subplot(122)
     from collections import OrderedDict    
-    
+
     plt.plot(timeX, d1p)
     plt.plot(timeX, d2p)
-    plt.ylabel('Power Income Rate')
+    plt.ylabel('Power Income Rate (power/s)')
 
     for i in T1:
-        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player1), c='r')
+        plt.axvline(x=timeX[i], linestyle='dashed', label='{} Tech Levelup'.format(Player1), c='r', ymax = 0.2)
     for i in T2:
-        plt.axvline(timeX[i], linestyle='dotted', label='{} Tech Levelup'.format(Player2), c='b')
-
+        plt.axvline(x=timeX[i], linestyle='dashed', label='{} Tech Levelup'.format(Player2), c='b', ymax = 0.2)
 
     hline = int(plt.ylim()[1]/6)
 
     for j in range(hline):
-        plt.axhline(6*(j+1), linestyle='dotted', c='black', label='Adv. Generator Count')
+        plt.axhline(6*(j+1), linestyle='-', c='black', label='Adv. Generator Count', xmax = 0.52, xmin = 0.48)
 
     plt.xlabel('Time (s)')
     
     handles, labels = plt.gca().get_legend_handles_labels()
+
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
     plt.gcf().set_size_inches(14,5)
@@ -397,7 +311,6 @@ def death(match):
         conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
         response = conn.getresponse()
         data = response.read()
-        #print(data)
         conn.close()
     except Exception as e:
         print("[Errno {0}] {1}".format(e.errno, e.strerror))
@@ -410,7 +323,7 @@ def death(match):
     events = (jsondata["GameEvents"])
 
 
-    list1, list2, death1, death2 = ([] for i in range(4))
+    list1, list2, death1, death2, b1 = ([] for i in range(5))
     
 
     for i in events:
@@ -419,9 +332,14 @@ def death(match):
             list1.append(str(i["PlayerIndex"]))
             list2.append(i["HumanPlayerId"])    
             specID = dict(zip(list1,list2)) 
+        
+        if i["EventName"] == 'BuildingConstructionQueued':
+            A = i['Location']
+            b1.append(A)
+            
+
     
         if i['EventName'] == 'Death':
-
             a = i['VictimLocation']
             b = str(i['VictimPlayerIndex'])
             player = specID[b]
@@ -433,6 +351,7 @@ def death(match):
 
     x1, y1, z1 = coords(death1)
     x2, y2, z2 = coords(death2)
+    x3, y3, z3 = coords(b1)
 
 
     from mpl_toolkits.mplot3d import Axes3D
@@ -440,18 +359,21 @@ def death(match):
     import numpy as np
     
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.gca()
     #ax.plot_trisurf(x1, y1, z1, cmap=plt.cm.viridis, linewidth=0.2)
     
 
-    ax.scatter(x1, y1, z1, c='r')
+    ax.scatter(z1,x1, c='r')
+    ax.scatter(z2,x2, c='b')
+    ax.scatter(z3, x3, c='g')    
+
 
     plt.show()
 
 
-
-death('a747b8ee-e081-4288-8cdb-73d17233c5bd')     
-#matchRates('a747b8ee-e081-4288-8cdb-73d17233c5bd')           
+# 346634df-1d7f-4b14-b8d0-ba7d80e6f65f
+#matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
+death('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')           
 #matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess')
         
 
