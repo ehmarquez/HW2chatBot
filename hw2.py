@@ -4,6 +4,7 @@ import time
 import keys
 from numpy import around
 from numpy import diff
+from unitsConv import unitNames
 
 
 headers = keys.hw2key()
@@ -46,7 +47,6 @@ def matchBuild(match, gameTag):
 
 
     # Metadata names to Real
-    from unitsConv import unitNames
     unitConv = unitNames()
 
     Names = []
@@ -294,7 +294,7 @@ def matchRates(match):
     pylab.savefig('rates.png')
     plt.gcf().clear()
 
-def death(match):
+def deathmap(match):
     
     def coords(ddict):
         x,y,z = ([] for i in range(3))
@@ -322,10 +322,8 @@ def death(match):
 
     events = (jsondata["GameEvents"])
 
-
     list1, list2, death1, death2, b1 = ([] for i in range(5))
     
-
     for i in events:
     
         if "PlayerIndex" and "HumanPlayerId" in i:
@@ -362,15 +360,56 @@ def death(match):
     ax = fig.gca()
     #ax.plot_trisurf(x1, y1, z1, cmap=plt.cm.viridis, linewidth=0.2)
     
-
     ax.scatter(z1,x1, c='r')
     ax.scatter(z2,x2, c='b')
     ax.scatter(z3, x3, c='g')    
 
-
     plt.show()
 
+def death(match):
+    try:
+        conn = http.client.HTTPSConnection('www.haloapi.com')
+        conn.request("GET", "/stats/hw2/matches/{}/events?%s".format(match) % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
 
+    jsondata = json.loads(data)
+    jsonkeys = jsondata.keys()
+    jsonvalues = jsondata.values()
+    jsonitems = jsondata.items()
+
+    events = (jsondata["GameEvents"])
+
+    conv = unitNames()
+    print(conv)
+
+    for i in events:
+        if i['EventName'] == 'Death':
+            unitName = i['VictimObjectTypeId']
+            unitIns = i['VictimInstanceId']
+            a = i['Participants']
+            for k, v in a.items():
+                b = a[k]['ObjectParticipants']
+                for k1 in b.items():
+                    murderer = k1[0]
+                    
+                    for k,v in conv.items():
+                        if unitName == k:
+                            unitName = v
+                        elif murderer == k:
+                            murderer = v 
+
+                    specs = k1[1]
+                    count = specs['Count']
+                    dmg = specs['CombatStats']
+                    for k2 in dmg:
+                        v2 = dmg[k2]['AttacksLanded']
+                        print ('{} killed by {} {}. DAMAGE: (ID: {} | AttacksLanded: {})'.format(unitName, count, murderer, k2, v2))
+
+                    #print(dmg)
 # 346634df-1d7f-4b14-b8d0-ba7d80e6f65f
 #matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
 death('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')           
