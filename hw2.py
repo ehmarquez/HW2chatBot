@@ -5,8 +5,13 @@ import keys
 from numpy import around
 from numpy import diff
 from unitsConv import unitNames
+import matplotlib.pyplot as plt
+import numpy as np
+import pylab
+from collections import OrderedDict    
 
 
+# pull key from key.py
 headers = keys.hw2key()
 
 params = urllib.parse.urlencode({
@@ -45,10 +50,8 @@ def matchBuild(match, gameTag):
     list1 = []
     list2 = []
 
-
     # Metadata names to Real
     unitConv = unitNames()
-
     Names = []
     
     for i in events:
@@ -71,8 +74,6 @@ def matchBuild(match, gameTag):
 
     fileobj = open('build.txt','w')
     
-
-
     for i in events:
 
         if "PlayerIndex" and "HumanPlayerId" in i:
@@ -87,10 +88,6 @@ def matchBuild(match, gameTag):
             timeint = i['TimeSinceStartMilliseconds'] / 1000
             mTime = time.strftime("%M:%S", time.gmtime(timeint))
 
-            # Player 1 #
-            # -------------------------- #
-            # Player 2 #
-
             if playerName == gameTag:
                 for k, v in unitConv.items():
                     if squadID == k:
@@ -98,8 +95,6 @@ def matchBuild(match, gameTag):
                 fileobj.write('{} trained {} ({})\n'.format(playerName, squadID, mTime))
                 print('{} trained {} ({})'.format(playerName, squadID, mTime))
 
-                
-                
             elif gameTag not in Names:
                 print('Invalid Gamertag. Gametag: ({})'.format(gameTag))
                 print(Names)
@@ -117,6 +112,7 @@ def matchBuild(match, gameTag):
 
     return False
 
+# shows supply/power income of a game provided a matchID from halo waypoint match history URL
 def matchRates(match): 
     try:
         conn = http.client.HTTPSConnection('www.haloapi.com')
@@ -170,6 +166,7 @@ def matchRates(match):
             a = resources[playerID1]
             b = resources[playerID2]
 
+            ''' # selection dictionary
             selectType = {
                 1: 'TotalSupply',
                 2: 'TotalEnergy',
@@ -180,6 +177,7 @@ def matchRates(match):
 
             Y1.append(a[selectType[sel]])
             Y2.append(b[selectType[sel]])
+            '''
 
             S1.append(a['Supply'])
             tS1.append(a['TotalSupply'])
@@ -207,9 +205,6 @@ def matchRates(match):
             timeX.append(xTime) # Time Array
 
     print ('Resource heartbeat count: {}'.format(counter))
-    import matplotlib.pyplot as plt
-    import pylab
-    import numpy as np
 
     # search for Tech level changes 
     v1 = np.array(tech1)
@@ -241,7 +236,6 @@ def matchRates(match):
         return temp    
 
     d1s = d1s.tolist()
- 
     d1s = rarray(d1s)
     d2s = rarray(d2s)
     d1p = rarray(d1p)
@@ -265,16 +259,15 @@ def matchRates(match):
    
     #power income rate (power/s)
     #included markers for adv. generator intervals (every 6power/s/s)
-
     plt.subplot(122)
-    from collections import OrderedDict    
-
     plt.plot(timeX, d1p)
     plt.plot(timeX, d2p)
     plt.ylabel('Power Income Rate (power/s)')
+    plt.xlabel('Time (s)')
 
+    # lines marking when tech level was upgraded
     for i in T1:
-        plt.axvline(x=timeX[i], linestyle='dashed', label='{} Tech Levelup'.format(Player1), c='r', ymax = 0.2)
+        plt.axvline(x=timeX[i], linestyle='dashed', label='{} Tech Levelup'.format(Player1), c='r', ymax = 0.2) 
     for i in T2:
         plt.axvline(x=timeX[i], linestyle='dashed', label='{} Tech Levelup'.format(Player2), c='b', ymax = 0.2)
 
@@ -283,17 +276,19 @@ def matchRates(match):
     for j in range(hline):
         plt.axhline(6*(j+1), linestyle='-', c='black', label='Adv. Generator Count', xmax = 0.52, xmin = 0.48)
 
-    plt.xlabel('Time (s)')
-    
     handles, labels = plt.gca().get_legend_handles_labels()
 
+    # format legend
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
     plt.gcf().set_size_inches(14,5)
-    plt.subplots_adjust(bottom=0.1, top=0.95, right=0.97, left=0.07)
+
+    plt.subplots_adjust(bottom=0.1, top=0.95, right=0.97, left=0.07) # Padding values
+
     pylab.savefig('rates.png')
     plt.gcf().clear()
 
+# scatter plots units deaths and buildings queued
 def deathmap(match):
     
     def coords(ddict):
@@ -321,7 +316,6 @@ def deathmap(match):
     jsonitems = jsondata.items()
 
     events = (jsondata["GameEvents"])
-
     list1, list2, death1, death2, b1 = ([] for i in range(5))
     
     for i in events:
@@ -335,8 +329,6 @@ def deathmap(match):
             A = i['Location']
             b1.append(A)
             
-
-    
         if i['EventName'] == 'Death':
             a = i['VictimLocation']
             b = str(i['VictimPlayerIndex'])
@@ -350,22 +342,21 @@ def deathmap(match):
     x1, y1, z1 = coords(death1)
     x2, y2, z2 = coords(death2)
     x3, y3, z3 = coords(b1)
-
-
-    from mpl_toolkits.mplot3d import Axes3D
-    import matplotlib.pyplot as plt
-    import numpy as np
     
     fig = plt.figure()
     ax = fig.gca()
-    #ax.plot_trisurf(x1, y1, z1, cmap=plt.cm.viridis, linewidth=0.2)
+
+    plt.style.use('ggplot')
     
-    ax.scatter(z1,x1, c='r')
-    ax.scatter(z2,x2, c='b')
-    ax.scatter(z3, x3, c='g')    
+    ax.scatter(z1,x1, c='r') # player 1 deaths
+    ax.scatter(z2,x2, c='b') # player 2 deaths
+    ax.scatter(z3, x3, c='g') # buildings queued
 
     plt.show()
 
+# using Match Events endpoint:
+# displays every unit death/what killed it
+# incomplete 
 def death(match):
     try:
         conn = http.client.HTTPSConnection('www.haloapi.com')
@@ -391,6 +382,7 @@ def death(match):
             unitName = i['VictimObjectTypeId']
             unitIns = i['VictimInstanceId']
             a = i['Participants']
+            strlist = []
             for k, v in a.items():
                 b = a[k]['ObjectParticipants']
                 for k1 in b.items():
@@ -407,14 +399,83 @@ def death(match):
                     dmg = specs['CombatStats']
                     for k2 in dmg:
                         v2 = dmg[k2]['AttacksLanded']
-                        print ('{} killed by {} {}. DAMAGE: (ID: {} | AttacksLanded: {})'.format(unitName, count, murderer, k2, v2))
+                        strlist.append('\n{} {}. DAMAGE: (ID: {} | AttacksLanded: {}'.format(count, murderer, k2, v2))
+
+                    for i in strlist:
+                        print('{} killed by {}'.format(unitName, i))
+                        #print ('{} killed by {} {}. DAMAGE: (ID: {} | AttacksLanded: {})'.format(unitName, count, murderer, k2, v2))
 
                     #print(dmg)
-# 346634df-1d7f-4b14-b8d0-ba7d80e6f65f
-#matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
-death('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')           
-#matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess')
+
+# MMR throughout past 10 1v1 X games
+def mmr(gamertag):
+
+    reqgamertag = gamertag.replace(' ', '+')
+    print ('{} and {}'.format(gamertag, reqgamertag))
+
+    try:
+        conn = http.client.HTTPSConnection('www.haloapi.com')
+        conn.request("GET", "/stats/hw2/players/{}/matches?%s".format(reqgamertag) % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+       # print(data)
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+
+    jsondata = json.loads(data)
+    jsonkeys = jsondata.keys()
+    jsonvalues = jsondata.values()
+    jsonitems = jsondata.items()
+
+    # using Match History endpoint
+    results = jsondata['Results']
+
+    mmrhist = []
+    count = []
+    counter = 0
+
+    for i in results:
+        # 1v1 crossplay playlist ID
+        if i['PlaylistId'] == '548d864e-8666-430e-9140-8dd2ad8fbfcd' and counter < 10: 
+            a = i['RatingProgress']
+            b = a['UpdatedMmr']['Rating']
+            b = around(b,3)
+            mmrhist.append(b)
+            counter = counter + 1
+            count.append(counter)
         
+    plt.style.use('ggplot')
+
+    
+    mmrhist = mmrhist[::-1]
+    # print ('{}\n{}'.format(mmrhist, count))
+    plt.plot(count, mmrhist, marker='.')
+
+    # Annotations
+    for i, txt in enumerate(mmrhist):
+        plt.annotate(txt, (count[i],mmrhist[i]+0.05))
+
+    # Title
+    plt.title('{} MMR history'.format(gamertag))
+
+    # additional formatting
+    plt.gca().set_ylim(min(mmrhist)-0.5, max(mmrhist)+0.5)
+
+    pylab.savefig('mmr.png')
+    plt.gcf().clear()
+
+
+
+
+#mmr('MY TV TURNEDOFF')
+#346634df-1d7f-4b14-b8d0-ba7d80e6f65f
+#matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
+#deathmap('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')           
+#death('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')           
+#matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess') 
+
+# 1v1 X ID: 548d864e-8666-430e-9140-8dd2ad8fbfcd
 
 
         
