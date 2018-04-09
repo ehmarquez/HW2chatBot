@@ -48,7 +48,6 @@ async def matchBuild(ctx, match, gamertag):
 
 @bot.command()
 async def mmr(ctx, *gamertag):
-    #conv = list(gamertag)[0]
     gTag = ' '.join(gamertag)
 
     hw2.mmr(gTag)
