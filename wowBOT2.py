@@ -24,13 +24,6 @@ async def logout(ctx):
     exit()
 
 @bot.command()
-async def matchStats(ctx, match):
-    
-    hw2.matchEvents(match)
-    imgfile = discord.File('stats.png')
-    await ctx.send('',file=imgfile)
-
-@bot.command()
 async def matchRates(ctx, match):
     
     hw2.matchRates(match)
@@ -52,5 +45,14 @@ async def matchBuild(ctx, match, gamertag):
         msg = obj.read()
         await ctx.send('```{}```'.format(msg))
         obj.close()
+
+@bot.command()
+async def mmr(ctx, *gamertag):
+    #conv = list(gamertag)[0]
+    gTag = ' '.join(gamertag)
+
+    hw2.mmr(gTag)
+    imgfile = discord.File('mmr.png')
+    await ctx.send('',file=imgfile)
 
 bot.run(tokenid)
