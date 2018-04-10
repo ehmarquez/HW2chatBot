@@ -45,11 +45,21 @@ async def matchBuild(ctx, match, gamertag):
         obj.close()
 
 @bot.command()
-async def mmr(ctx, *gamertag):
+async def mmrhist(ctx, *gamertag):
     gTag = ' '.join(gamertag)
 
-    hw2.mmr(gTag)
+    hw2.mmrhist(gTag)
     imgfile = discord.File('mmr.png')
     await ctx.send('',file=imgfile)
+
+@bot.command()
+async def mmr(ctx, playlist, *gamertag):
+    gTag = ' '.join(gamertag)
+    MMR = hw2.mmr(str(playlist), gTag)
+    if MMR == False:
+        await ctx.send('Invalid Playlist Name (1v1, 2v2, 3v3) or Gamertag.')
+    else:
+        await ctx.send('{} | {} MMR : {}'.format(gTag, playlist, MMR))
+
 
 bot.run(tokenid)

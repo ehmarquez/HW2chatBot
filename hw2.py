@@ -21,6 +21,7 @@ def rnd(arr):
     for i in arr:
         i = around(i)
 
+# returns builds of a player : /matchBuild matchID playerName
 def matchBuild(match, gameTag):
     
     try:
@@ -408,17 +409,16 @@ def death(match):
                     #print(dmg)
 
 # MMR throughout past 10 1v1 X games
-def mmr(gamertag):
+def mmrhist(gamertag):
 
     reqgamertag = gamertag.replace(' ', '+')
     print ('{} and {}'.format(gamertag, reqgamertag))
 
     try:
         conn = http.client.HTTPSConnection('www.haloapi.com')
-        conn.request("GET", "/stats/hw2/players/{}/matches?%s".format(reqgamertag) % params, "{body}", headers)
+        conn.request("GET", "/stats/hw2/players/{}/matches?matchType=matchmaking%s".format(reqgamertag) % params, "{body}", headers)
         response = conn.getresponse()
         data = response.read()
-       # print(data)
         conn.close()
     except Exception as e:
         print("[Errno {0}] {1}".format(e.errno, e.strerror))
@@ -465,6 +465,39 @@ def mmr(gamertag):
     pylab.savefig('mmr.png')
     plt.gcf().clear()
 
+def mmr(playlist, gamertag):
+            
+    reqgamertag = gamertag.replace(' ', '+')
+    print ('{} and {}'.format(gamertag, reqgamertag))
+
+    # playlists ID for 3 main playlists
+    plists = {
+        '1v1' : '548d864e-8666-430e-9140-8dd2ad8fbfcd',
+        '2v2' : '7c625f1c4c6644848cdea261e3b4d104',
+        '3v3' : 'fe8e1773adc643d0a23f4599987ce0f4',
+    }
+
+    try:
+        plistID = plists[playlist]
+    except:
+        return False
+ 
+    try:
+        conn = http.client.HTTPSConnection('www.haloapi.com')
+        conn.request("GET", "/stats/hw2/playlist/{}/rating?players={}%s".format(plistID, reqgamertag) % params, "{body}", headers)
+        response = conn.getresponse()
+        data = response.read()
+        conn.close()
+    except Exception as e:
+        print("[Errno {0}] {1}".format(e.errno, e.strerror))
+    
+    jsondata = json.loads(data)
+    rating = jsondata['Results'][0]['Result']['Mmr']['Rating']
+
+    return rating
+
+#mmr('1V1', 'my+tv+turnedoff')
+
 #mmr('MY TV TURNEDOFF')
 #346634df-1d7f-4b14-b8d0-ba7d80e6f65f
 #matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
@@ -473,7 +506,7 @@ def mmr(gamertag):
 #matchBuild('a747b8ee-e081-4288-8cdb-73d17233c5bd', 'TakeSomeNotess') 
 
 # 1v1 X ID: 548d864e-8666-430e-9140-8dd2ad8fbfcd
-
-
+# 2v2 ID: 7c625f1c4c6644848cdea261e3b4d104
+# 3v3 ID: fe8e1773adc643d0a23f4599987ce0f4
         
 
