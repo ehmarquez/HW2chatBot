@@ -49,7 +49,8 @@ Currently Active:
 ```
 /matchRates {matchId}
 /matchBuild {matchId} {playerName}
-/mmr {playerName}
+/mmrhist {playerName}
+/mmr {[1v1, 2v2, 3v3]} {playerName}
 ```
 
 Work in Progress:

@@ -414,6 +414,12 @@ def mmrhist(gamertag):
     reqgamertag = gamertag.replace(' ', '+')
     print ('{} and {}'.format(gamertag, reqgamertag))
 
+    plists = {
+        '1v1' : '548d864e-8666-430e-9140-8dd2ad8fbfcd',
+        '2v2' : '7c625f1c4c6644848cdea261e3b4d104',
+        '3v3' : 'fe8e1773adc643d0a23f4599987ce0f4',
+    }
+
     try:
         conn = http.client.HTTPSConnection('www.haloapi.com')
         conn.request("GET", "/stats/hw2/players/{}/matches?matchType=matchmaking%s".format(reqgamertag) % params, "{body}", headers)
@@ -492,12 +498,13 @@ def mmr(playlist, gamertag):
         print("[Errno {0}] {1}".format(e.errno, e.strerror))
     
     jsondata = json.loads(data)
+    # grab MMR value from request
     rating = jsondata['Results'][0]['Result']['Mmr']['Rating']
+    rating = around(rating, 2)
 
     return rating
 
 #mmr('1V1', 'my+tv+turnedoff')
-
 #mmr('MY TV TURNEDOFF')
 #346634df-1d7f-4b14-b8d0-ba7d80e6f65f
 #matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
@@ -508,5 +515,5 @@ def mmr(playlist, gamertag):
 # 1v1 X ID: 548d864e-8666-430e-9140-8dd2ad8fbfcd
 # 2v2 ID: 7c625f1c4c6644848cdea261e3b4d104
 # 3v3 ID: fe8e1773adc643d0a23f4599987ce0f4
-        
+
 
