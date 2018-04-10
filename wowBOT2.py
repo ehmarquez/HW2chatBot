@@ -30,8 +30,6 @@ async def matchRates(ctx, match):
     imgfile = discord.File('rates.png')
     await ctx.send('',file=imgfile)
 
-#a747b8ee-e081-4288-8cdb-73d17233c5bd
-
 @bot.command()
 async def matchBuild(ctx, match, gamertag):
     await ctx.send('Processing..')

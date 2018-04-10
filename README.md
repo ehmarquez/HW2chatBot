@@ -17,11 +17,15 @@ pip install -U https://github.com/Rapptz/discord.py/archive/rewrite.zip
 May cause issues with previously install Discord library (0.16.12 and earlier)
 
 ## Requirements
-Create
+
+After signing up for Halo Wars 2 API key and creating 
+your own Discord bot with its own authentication key.
+
+Create a file.
 ```
 keys.py 
 ```
-That includes 
+Functions Included:
 ```
 hw2key()
 discordkey()
@@ -30,3 +34,27 @@ Refer to
 ```
 keysample.py
 ```
+Replace the corresponding 'xxx' values with your Halo Wars 2 API key and your Discord bot token.
+
+### How to Run
+```
+python wowBOT2.py
+```
+
+The bot should log on to any servers you've assigned it to.
+
+#### Commands
+
+Currently Active:
+```
+/matchRates {matchId}
+/matchBuild {matchId} {playerName}
+/mmr {playerName}
+```
+
+Work in Progress:
+```
+/deathMap {matchId}
+/unitDeaths {matchId} {playerName}
+```
+

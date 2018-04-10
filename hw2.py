@@ -465,9 +465,6 @@ def mmr(gamertag):
     pylab.savefig('mmr.png')
     plt.gcf().clear()
 
-
-
-
 #mmr('MY TV TURNEDOFF')
 #346634df-1d7f-4b14-b8d0-ba7d80e6f65f
 #matchRates('346634df-1d7f-4b14-b8d0-ba7d80e6f65f')     
